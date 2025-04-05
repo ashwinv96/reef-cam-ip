@@ -1,9 +1,8 @@
-from flask import Flask, render_template, Response
+from flask import Flask, render_template, Response, redirect, url_for
 from camera_rtsp import generate_frames
-import os
+from snapshot import take_snapshot
 
-TEMPLATE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'templates'))
-app = Flask(__name__, template_folder=TEMPLATE_DIR)
+app = Flask(__name__)
 
 @app.route('/')
 def index():
@@ -13,6 +12,15 @@ def index():
 def video_feed():
     return Response(generate_frames(),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@app.route('/snapshot')
+def snapshot():
+    filename = take_snapshot()
+    if filename:
+        print(f"✅ Snapshot saved as {filename}")
+    else:
+        print("❌ Snapshot failed.")
+    return redirect(url_for('index'))
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5001, debug=True)
