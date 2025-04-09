@@ -2,16 +2,54 @@
 <html>
 <head>
     <title>Reef Cam MVP</title>
+    <script>
+        function checkStatus(cameraId) {
+            fetch(`/status/${cameraId}`)
+                .then(res => res.json())
+                .then(data => {
+                    const button = document.getElementById(`timelapse-btn-${cameraId}`);
+                    const status = document.getElementById(`timelapse-status-${cameraId}`);
+                    if (data.active) {
+                        button.disabled = true;
+                        status.textContent = `⏳ Timelapse running... (${data.seconds_left}s left)`;
+                    } else {
+                        button.disabled = false;
+                        status.textContent = "";
+                    }
+                });
+        }
+
+        function startPolling() {
+            setInterval(() => {
+                checkStatus("cam1");
+                checkStatus("cam2");
+            }, 5000); // poll every 5s
+        }
+
+        window.onload = startPolling;
+    </script>
 </head>
 <body>
     <h1>Live Reef Streams</h1>
 
     <h2>Camera 1</h2>
-    <img src="/video_feed/cam1" width="640">
+    <img src="/video_feed/cam1" width="640"><br>
     <form action="/snapshot/cam1"><button type="submit">📸 Snapshot Cam 1</button></form>
+    <form action="/trigger_timelapse/cam1" method="POST">
+        <input type="hidden" name="snapshot_interval" value="10">
+        <input type="hidden" name="video_interval" value="300">
+        <button type="submit" id="timelapse-btn-cam1">🎞️ Trigger Timelapse Cam 1</button>
+        <span id="timelapse-status-cam1" style="margin-left: 10px; color: gray;"></span>
+    </form>
 
     <h2>Camera 2</h2>
-    <img src="/video_feed/cam2" width="640">
+    <img src="/video_feed/cam2" width="640"><br>
     <form action="/snapshot/cam2"><button type="submit">📸 Snapshot Cam 2</button></form>
+    <form action="/trigger_timelapse/cam2" method="POST">
+        <input type="hidden" name="snapshot_interval" value="10">
+        <input type="hidden" name="video_interval" value="300">
+        <button type="submit" id="timelapse-btn-cam2">🎞️ Trigger Timelapse Cam 2</button>
+        <span id="timelapse-status-cam2" style="margin-left: 10px; color: gray;"></span>
+    </form>
 </body>
 </html>

@@ -5,17 +5,6 @@ import subprocess
 from datetime import datetime
 from snapshot import take_snapshot, DEVICE_IDS, s3, S3_BUCKET, USER_ID
 
-# Default intervals (used for auto scheduler)
-SNAPSHOT_INTERVAL_SEC = int(os.getenv("TIMELAPSE_SNAPSHOT_INTERVAL_SEC", 10))     # e.g., 10s
-VIDEO_GENERATION_INTERVAL_SEC = int(os.getenv("TIMELAPSE_VIDEO_INTERVAL_SEC", 300))  # e.g., 5min
-
-def snapshot_worker(camera_id):
-    while True:
-        now = datetime.now().strftime("%H:%M:%S")
-        print(f"[{now}] Taking snapshot for {camera_id}")
-        take_snapshot(camera_id)
-        time.sleep(SNAPSHOT_INTERVAL_SEC)
-
 def generate_timelapse(camera_id):
     device_id = DEVICE_IDS[camera_id]
     date_str = datetime.now().strftime("%Y-%m-%d")
@@ -51,31 +40,16 @@ def generate_timelapse(camera_id):
     else:
         print(f"❌ Failed to generate timelapse for {camera_id}")
 
-def start_snapshot_threads():
-    for camera_id in DEVICE_IDS:
-        thread = threading.Thread(target=snapshot_worker, args=(camera_id,), daemon=True)
-        thread.start()
-        print(f"🟢 Started snapshot thread for {camera_id}")
-
-# ✅ Function used by Flask trigger to run a temporary manual job
-def run_custom_timelapse(camera_id, snapshot_interval, video_interval):
-    def snapshot_loop():
-        deadline = time.time() + video_interval
-        while time.time() < deadline:
+def start_custom_timelapse_job(camera_id, snapshot_interval, video_interval):
+    def worker():
+        start_time = time.time()
+        while time.time() - start_time < video_interval:
             now = datetime.now().strftime("%H:%M:%S")
             print(f"[{now}] Taking snapshot for {camera_id}")
             take_snapshot(camera_id)
             time.sleep(snapshot_interval)
+
         generate_timelapse(camera_id)
 
-    thread = threading.Thread(target=snapshot_loop, daemon=True)
+    thread = threading.Thread(target=worker, daemon=True)
     thread.start()
-    print(f"🟢 Manual timelapse started for {camera_id} (every {snapshot_interval}s, duration {video_interval}s)")
-
-# Run default scheduler if this is the main script
-if __name__ == "__main__":
-    start_snapshot_threads()
-    while True:
-        time.sleep(VIDEO_GENERATION_INTERVAL_SEC)
-        for camera_id in DEVICE_IDS:
-            generate_timelapse(camera_id)
