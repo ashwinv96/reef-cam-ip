@@ -29,17 +29,18 @@ def take_snapshot(camera_id):
         print(f"⚠️ No frame available from {camera_id}")
         return None
 
+    device_id = DEVICE_IDS[camera_id]
     now = datetime.now()
     date_str = now.strftime("%Y-%m-%d")
     time_str = now.strftime("%H-%M-%S")
     filename = f"snapshot_{time_str}.jpg"
-    
-    local_dir = f"snapshots/{camera_id}/{date_str}"
+
+    local_dir = f"snapshots/{device_id}/{date_str}"
     os.makedirs(local_dir, exist_ok=True)
     local_path = os.path.join(local_dir, filename)
-    
-    cloud_path = f"{USER_ID}/{DEVICE_IDS[camera_id]}/snapshots/{date_str}/{filename}"
-    
+
+    cloud_path = f"{USER_ID}/{device_id}/snapshots/{date_str}/{filename}"
+
     cv2.imwrite(local_path, frame)
     print(f"✅ Snapshot saved as {filename}")
 
