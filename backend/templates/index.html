@@ -4,10 +4,14 @@
     <title>Reef Cam MVP</title>
 </head>
 <body>
-    <h1>Live Reef Stream</h1>
-    <img src="{{ url_for('video_feed') }}" width="640">
-    <form action="/snapshot" method="get">
-        <button type="submit">📸 Take Snapshot</button>
-    </form>    
+    <h1>Live Reef Streams</h1>
+
+    <h2>Camera 1</h2>
+    <img src="/video_feed/cam1" width="640">
+    <form action="/snapshot/cam1"><button type="submit">📸 Snapshot Cam 1</button></form>
+
+    <h2>Camera 2</h2>
+    <img src="/video_feed/cam2" width="640">
+    <form action="/snapshot/cam2"><button type="submit">📸 Snapshot Cam 2</button></form>
 </body>
 </html>

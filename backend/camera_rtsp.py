@@ -1,29 +1,54 @@
-import cv2
 import os
+import cv2
 import threading
+from dotenv import load_dotenv
 
-SIM_MODE = os.environ.get("USE_SIMULATION", "true").lower() == "true"
-VIDEO_SOURCE = "test_assets/reef_test.mp4"
-RTSP_STREAM = "rtsp://user:pass@camera-ip:554/stream1"
+load_dotenv()
 
-cap = cv2.VideoCapture(VIDEO_SOURCE if SIM_MODE else RTSP_STREAM)
-lock = threading.Lock()
-current_frame = None
+CAMERA_URLS = {
+    "cam1": os.getenv("RTSP_URL_CAM1"),
+    "cam2": os.getenv("RTSP_URL_CAM2"),
+}
 
-def generate_frames():
-    global current_frame
-    while cap.isOpened():
-        success, frame = cap.read()
-        if not success:
+frame_buffers = {
+    "cam1": None,
+    "cam2": None,
+}
+locks = {
+    "cam1": threading.Lock(),
+    "cam2": threading.Lock(),
+}
+
+def stream_camera(camera_id, rtsp_url):
+    cap = cv2.VideoCapture(rtsp_url)
+    while True:
+        if not cap.isOpened():
+            print(f"❌ Could not open stream for {camera_id}")
             break
-        with lock:
-            current_frame = frame.copy()
+        ret, frame = cap.read()
+        if not ret:
+            print(f"⚠️ Failed to grab frame from {camera_id}")
+            break
+        with locks[camera_id]:
+            frame_buffers[camera_id] = frame
+    cap.release()
 
+# Start threads
+for cam_id, url in CAMERA_URLS.items():
+    threading.Thread(target=stream_camera, args=(cam_id, url), daemon=True).start()
+
+def generate_frames(camera_id):
+    while True:
+        with locks[camera_id]:
+            frame = frame_buffers[camera_id]
+        if frame is None:
+            continue
         _, buffer = cv2.imencode('.jpg', frame)
         frame_bytes = buffer.tobytes()
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
 
-def get_current_frame():
-    with lock:
-        return current_frame.copy() if current_frame is not None else None
+def get_current_frame(camera_id):
+    with locks[camera_id]:
+        frame = frame_buffers[camera_id]
+        return frame.copy() if frame is not None else None
