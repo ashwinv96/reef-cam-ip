@@ -2,11 +2,12 @@ import os
 import time
 import threading
 import subprocess
-from datetime import datetime
-from snapshot import take_snapshot, DEVICE_IDS, s3, S3_BUCKET, USER_ID
+from datetime import datetime, timedelta
+from config import CAMERAS, S3_BUCKET, USER_ID  # Import CAMERAS from config.py
+from snapshot import take_snapshot, s3
 
 def generate_timelapse(camera_id):
-    device_id = DEVICE_IDS[camera_id]
+    device_id = CAMERAS[camera_id]["device_id"]
     date_str = datetime.now().strftime("%Y-%m-%d")
 
     snapshot_dir = f"snapshots/{device_id}/{date_str}"

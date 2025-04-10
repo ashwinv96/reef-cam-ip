@@ -21,8 +21,9 @@
 
         function startPolling() {
             setInterval(() => {
-                checkStatus("cam1");
-                checkStatus("cam2");
+                {% for camera_id in cameras %}
+                checkStatus("{{ camera_id }}");
+                {% endfor %}
             }, 5000); // poll every 5s
         }
 
@@ -32,24 +33,16 @@
 <body>
     <h1>Live Reef Streams</h1>
 
-    <h2>Camera 1</h2>
-    <img src="/video_feed/cam1" width="640"><br>
-    <form action="/snapshot/cam1"><button type="submit">📸 Snapshot Cam 1</button></form>
-    <form action="/trigger_timelapse/cam1" method="POST">
+    {% for camera_id, config in cameras.items() %}
+    <h2>Camera {{ loop.index }}</h2>
+    <img src="/video_feed/{{ camera_id }}" width="640"><br>
+    <form action="/snapshot/{{ camera_id }}"><button type="submit">📸 Snapshot {{ camera_id }}</button></form>
+    <form action="/trigger_timelapse/{{ camera_id }}" method="POST">
         <input type="hidden" name="snapshot_interval" value="10">
         <input type="hidden" name="video_interval" value="300">
-        <button type="submit" id="timelapse-btn-cam1">🎞️ Trigger Timelapse Cam 1</button>
-        <span id="timelapse-status-cam1" style="margin-left: 10px; color: gray;"></span>
+        <button type="submit" id="timelapse-btn-{{ camera_id }}">🎞️ Trigger Timelapse {{ camera_id }}</button>
+        <span id="timelapse-status-{{ camera_id }}" style="margin-left: 10px; color: gray;"></span>
     </form>
-
-    <h2>Camera 2</h2>
-    <img src="/video_feed/cam2" width="640"><br>
-    <form action="/snapshot/cam2"><button type="submit">📸 Snapshot Cam 2</button></form>
-    <form action="/trigger_timelapse/cam2" method="POST">
-        <input type="hidden" name="snapshot_interval" value="10">
-        <input type="hidden" name="video_interval" value="300">
-        <button type="submit" id="timelapse-btn-cam2">🎞️ Trigger Timelapse Cam 2</button>
-        <span id="timelapse-status-cam2" style="margin-left: 10px; color: gray;"></span>
-    </form>
+    {% endfor %}
 </body>
 </html>

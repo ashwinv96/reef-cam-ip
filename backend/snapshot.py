@@ -1,26 +1,16 @@
+from config import CAMERAS, S3_BUCKET, S3_ACCESS_KEY, S3_SECRET_KEY, S3_ENDPOINT, USER_ID
 import os
 import cv2
 import boto3
 from datetime import datetime
-from dotenv import load_dotenv
 from camera_rtsp import get_current_frame
 
-load_dotenv()
-
-S3_BUCKET = os.getenv("S3_BUCKET")
-S3_ACCESS_KEY = os.getenv("S3_ACCESS_KEY")
-S3_SECRET_KEY = os.getenv("S3_SECRET_KEY")
-S3_ENDPOINT = os.getenv("S3_ENDPOINT")
-USER_ID = os.getenv("USER_ID")
-DEVICE_IDS = {
-    "cam1": os.getenv("DEVICE_ID_CAM1", "tankcam01"),
-    "cam2": os.getenv("DEVICE_ID_CAM2", "tankcam02")
-}
-
-s3 = boto3.client("s3",
+# Initialize S3 client
+s3 = boto3.client(
+    "s3",
     endpoint_url=S3_ENDPOINT,
     aws_access_key_id=S3_ACCESS_KEY,
-    aws_secret_access_key=S3_SECRET_KEY
+    aws_secret_access_key=S3_SECRET_KEY,
 )
 
 def take_snapshot(camera_id):
@@ -29,7 +19,7 @@ def take_snapshot(camera_id):
         print(f"⚠️ No frame available from {camera_id}")
         return None
 
-    device_id = DEVICE_IDS[camera_id]
+    device_id = CAMERAS[camera_id]["device_id"]
     now = datetime.now()
     date_str = now.strftime("%Y-%m-%d")
     time_str = now.strftime("%H-%M-%S")

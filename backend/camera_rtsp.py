@@ -1,23 +1,9 @@
-import os
+from config import CAMERAS
 import cv2
 import threading
-from dotenv import load_dotenv
 
-load_dotenv()
-
-CAMERA_URLS = {
-    "cam1": os.getenv("RTSP_URL_CAM1"),
-    "cam2": os.getenv("RTSP_URL_CAM2"),
-}
-
-frame_buffers = {
-    "cam1": None,
-    "cam2": None,
-}
-locks = {
-    "cam1": threading.Lock(),
-    "cam2": threading.Lock(),
-}
+frame_buffers = {camera_id: None for camera_id in CAMERAS}
+locks = {camera_id: threading.Lock() for camera_id in CAMERAS}
 
 def stream_camera(camera_id, rtsp_url):
     cap = cv2.VideoCapture(rtsp_url)
@@ -33,9 +19,9 @@ def stream_camera(camera_id, rtsp_url):
             frame_buffers[camera_id] = frame
     cap.release()
 
-# Start threads
-for cam_id, url in CAMERA_URLS.items():
-    threading.Thread(target=stream_camera, args=(cam_id, url), daemon=True).start()
+# Start threads for all cameras
+for camera_id, config in CAMERAS.items():
+    threading.Thread(target=stream_camera, args=(camera_id, config["rtsp_url"]), daemon=True).start()
 
 def generate_frames(camera_id):
     while True:
