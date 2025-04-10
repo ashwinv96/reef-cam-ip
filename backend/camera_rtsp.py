@@ -6,7 +6,9 @@ frame_buffers = {camera_id: None for camera_id in CAMERAS}
 locks = {camera_id: threading.Lock() for camera_id in CAMERAS}
 
 def stream_camera(camera_id, rtsp_url):
-    cap = cv2.VideoCapture(rtsp_url)
+    # Use GStreamer pipeline for hardware-accelerated decoding
+    gst_pipeline = f"rtspsrc location={rtsp_url} ! decodebin ! videoconvert ! appsink"
+    cap = cv2.VideoCapture(gst_pipeline, cv2.CAP_GSTREAMER)
     while True:
         if not cap.isOpened():
             print(f"❌ Could not open stream for {camera_id}")
