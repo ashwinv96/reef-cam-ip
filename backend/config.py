@@ -12,6 +12,14 @@ CAMERAS = {
     "cam2": {
         "device_id": os.getenv("DEVICE_ID_CAM2"),
         "rtsp_url": os.getenv("RTSP_URL_CAM2")
+    },
+    "cam3": {
+        "device_id": os.getenv("DEVICE_ID_CAM3"),
+        "rtsp_url": os.getenv("RTSP_URL_CAM3")
+    },
+    "cam4": {
+        "device_id": os.getenv("DEVICE_ID_CAM4"),
+        "rtsp_url": os.getenv("RTSP_URL_CAM4")
     }
 }
 
