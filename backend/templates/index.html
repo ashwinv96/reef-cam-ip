@@ -1,48 +1,55 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Reef Cam MVP</title>
-    <script>
-        function checkStatus(cameraId) {
-            fetch(`/status/${cameraId}`)
-                .then(res => res.json())
-                .then(data => {
-                    const button = document.getElementById(`timelapse-btn-${cameraId}`);
-                    const status = document.getElementById(`timelapse-status-${cameraId}`);
-                    if (data.active) {
-                        button.disabled = true;
-                        status.textContent = `⏳ Timelapse running... (${data.seconds_left}s left)`;
-                    } else {
-                        button.disabled = false;
-                        status.textContent = "";
-                    }
-                });
-        }
+{% for camera_id, config in cameras.items() %}
+<h2>Camera {{ loop.index }}</h2>
+<img src="/video_feed/{{ camera_id }}" width="640"><br>
 
-        function startPolling() {
-            setInterval(() => {
-                {% for camera_id in cameras %}
-                checkStatus("{{ camera_id }}");
-                {% endfor %}
-            }, 5000); // poll every 5s
-        }
+<!-- Snapshot Button -->
+<form action="/snapshot/{{ camera_id }}"><button type="submit">📸 Snapshot {{ camera_id }}</button></form>
 
-        window.onload = startPolling;
-    </script>
-</head>
-<body>
-    <h1>Live Reef Streams</h1>
+<!-- Timelapse Enable Toggle -->
+<button id="timelapse-toggle-{{ camera_id }}" onclick="toggleTimelapse('{{ camera_id }}')">Enable Timelapse</button>
+<span id="timelapse-status-{{ camera_id }}" style="margin-left: 10px; color: gray;"></span>
 
-    {% for camera_id, config in cameras.items() %}
-    <h2>Camera {{ loop.index }}</h2>
-    <img src="/video_feed/{{ camera_id }}" width="640"><br>
-    <form action="/snapshot/{{ camera_id }}"><button type="submit">📸 Snapshot {{ camera_id }}</button></form>
-    <form action="/trigger_timelapse/{{ camera_id }}" method="POST">
-        <input type="hidden" name="snapshot_interval" value="10">
-        <input type="hidden" name="video_interval" value="300">
-        <button type="submit" id="timelapse-btn-{{ camera_id }}">🎞️ Trigger Timelapse {{ camera_id }}</button>
-        <span id="timelapse-status-{{ camera_id }}" style="margin-left: 10px; color: gray;"></span>
-    </form>
-    {% endfor %}
-</body>
-</html>
+<script>
+    function toggleTimelapse(cameraId) {
+        const button = document.getElementById(`timelapse-toggle-${cameraId}`);
+        const isEnabled = button.textContent.includes("Disable");
+        fetch(`/toggle_timelapse/${cameraId}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ enable: !isEnabled })
+        }).then(() => {
+            button.textContent = isEnabled ? "Enable Timelapse" : "Disable Timelapse";
+        });
+    }
+
+    function checkStatus(cameraId) {
+    fetch(`/status/${cameraId}`)
+        .then(res => res.json())
+        .then(data => {
+            const button = document.getElementById(`timelapse-toggle-${cameraId}`);
+            const status = document.getElementById(`timelapse-status-${cameraId}`);
+            if (data.enabled) {
+                button.textContent = "Disable Timelapse";
+                if (data.seconds_left !== null) {
+                    status.textContent = `⏳ Timelapse running... (${data.seconds_left}s left for next video)`;
+                } else {
+                    status.textContent = "⏳ Timelapse running...";
+                }
+            } else {
+                button.textContent = "Enable Timelapse";
+                status.textContent = "Timelapse disabled";
+            }
+        });
+}
+
+    function startPolling() {
+        setInterval(() => {
+            {% for camera_id in cameras %}
+            checkStatus("{{ camera_id }}");
+            {% endfor %}
+        }, 5000); // poll every 5s
+    }
+
+    window.onload = startPolling;
+</script>
+{% endfor %}

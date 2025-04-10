@@ -1,18 +1,12 @@
 from flask import Flask, render_template, Response, redirect, url_for, request, jsonify
-from config import CAMERAS
+from config import CAMERAS, TIMELAPSE_VIDEO_INTERVAL_SEC  # Import the interval from config
 from snapshot import take_snapshot
 from camera_rtsp import generate_frames
-from timelapse_utils import start_custom_timelapse_job
-import threading
-import time
+from timelapse_utils import start_timelapse, stop_timelapse
+from state import timelapse_states  # Import from state.py
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
-
-timelapse_locks = {camera_id: threading.Lock() for camera_id in CAMERAS}
-timelapse_end_times = {}
-
-DEFAULT_VIDEO_INTERVAL = 300  # seconds (5 mins)
 
 @app.route("/")
 def index():
@@ -28,35 +22,33 @@ def snapshot(camera_id):
     take_snapshot(camera_id)
     return redirect(url_for("index"))
 
-@app.route("/trigger_timelapse/<camera_id>", methods=["POST"])
-def trigger_timelapse(camera_id):
-    snapshot_interval = int(request.form.get("snapshot_interval", 10))
-    video_interval = int(request.form.get("video_interval", DEFAULT_VIDEO_INTERVAL))
+@app.route("/toggle_timelapse/<camera_id>", methods=["POST"])
+def toggle_timelapse(camera_id):
+    data = request.get_json()
+    enable = data.get("enable", False)
 
-    if camera_id in timelapse_end_times and datetime.now() < timelapse_end_times[camera_id]:
-        print(f"⏳ Timelapse already running for {camera_id}")
-        return redirect(url_for("index"))
+    if enable:
+        start_timelapse(camera_id)
+        timelapse_states[camera_id]["enabled"] = True
+        # Use TIMELAPSE_VIDEO_INTERVAL_SEC from config
+        timelapse_states[camera_id]["next_video_time"] = datetime.now() + timedelta(seconds=TIMELAPSE_VIDEO_INTERVAL_SEC)
+    else:
+        stop_timelapse(camera_id)
+        timelapse_states[camera_id]["enabled"] = False
+        timelapse_states[camera_id]["next_video_time"] = None
 
-    def run_timelapse():
-        start_custom_timelapse_job(camera_id, snapshot_interval, video_interval)
-
-    thread = threading.Thread(target=run_timelapse, daemon=True)
-    thread.start()
-
-    timelapse_end_times[camera_id] = datetime.now() + timedelta(seconds=video_interval)
-    print(f"🟢 Manual timelapse started for {camera_id} (every {snapshot_interval}s, duration {video_interval}s)")
-    return redirect(url_for("index"))
+    return jsonify({"success": True})
 
 @app.route("/status/<camera_id>")
 def timelapse_status(camera_id):
+    state = timelapse_states[camera_id]
     now = datetime.now()
-    end_time = timelapse_end_times.get(camera_id)
+    next_video_time = state.get("next_video_time")
 
-    if end_time and now < end_time:
-        remaining = int((end_time - now).total_seconds())
-        return jsonify({"active": True, "seconds_left": remaining})
-    return jsonify({"active": False})
+    if state["enabled"] and next_video_time:
+        remaining = max(0, int((next_video_time - now).total_seconds()))  # Ensure no negative values
+        return jsonify({"enabled": True, "seconds_left": remaining})
+    return jsonify({"enabled": state["enabled"], "seconds_left": None})
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001, debug=True)
-    
