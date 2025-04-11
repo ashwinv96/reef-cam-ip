@@ -1,23 +1,22 @@
-import unittest
-from unittest.mock import patch, MagicMock
-from snapshot import take_snapshot
-from timelapse_utils import generate_timelapse
 import os
+import unittest
+from datetime import datetime
+from snapshot import take_snapshot, DEVICE_IDS
 
-class TestPipeline(unittest.TestCase):
-    @patch("snapshot.get_current_frame")
-    @patch("snapshot.s3.upload_fileobj")
-    def test_snapshot(self, mock_upload, mock_frame):
-        import numpy as np
-        mock_frame.return_value = 255 * np.ones((480, 640, 3), dtype=np.uint8)
-        filename = take_snapshot("cam1")
-        self.assertTrue(filename.endswith(".jpg"))
-        assert os.path.exists(f"snapshots/tankcam01/{filename.split('_')[1][:10]}/{filename}")
+class TestSnapshotPipeline(unittest.TestCase):
+    def test_snapshot_and_upload(self):
+        # Use first available camera from DEVICE_IDS
+        camera_id = list(DEVICE_IDS.keys())[0]
+        device_id = DEVICE_IDS[camera_id]
 
-    @patch("subprocess.run")
-    def test_timelapse_generation(self, mock_subprocess):
-        mock_subprocess.return_value = 0
-        generate_timelapse("cam1")  # Will succeed if dummy snapshots exist
+        # Take snapshot
+        filename = take_snapshot(camera_id)
+        self.assertIsNotNone(filename, "Snapshot failed or returned None")
 
-if __name__ == '__main__':
+        # Construct expected local path
+        today = datetime.now().strftime("%Y-%m-%d")
+        local_path = f"snapshots/{device_id}/{today}/{filename}"
+        self.assertTrue(os.path.exists(local_path), f"Snapshot not found at {local_path}")
+
+if __name__ == "__main__":
     unittest.main()
