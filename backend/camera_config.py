@@ -2,11 +2,13 @@ import json
 import os
 import threading
 
-# Detect test mode and adjust filename accordingly
-FILENAME = "camera_config.test.json" if os.getenv("TESTING") == "1" else "camera_config.json"
+# Use environment variable override if present (e.g., during CI)
+CONFIG_FILE = os.environ.get("CAMERA_CONFIG_FILE")
 
-# Always resolve relative to the current file location
-CONFIG_FILE = os.path.join(os.path.dirname(__file__), FILENAME)
+# Fallback to default if not provided
+if not CONFIG_FILE:
+    filename = "camera_config.test.json" if os.getenv("TESTING") == "1" else "camera_config.json"
+    CONFIG_FILE = os.path.join(os.path.dirname(__file__), filename)
 
 _lock = threading.Lock()
 
