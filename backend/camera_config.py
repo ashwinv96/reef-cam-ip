@@ -2,7 +2,12 @@ import json
 import os
 import threading
 
-CONFIG_FILE = os.getenv("CAMERA_CONFIG_FILE", "camera_config.json")
+# Detect test mode and adjust filename accordingly
+FILENAME = "camera_config.test.json" if os.getenv("TESTING") == "1" else "camera_config.json"
+
+# Always resolve relative to the current file location
+CONFIG_FILE = os.path.join(os.path.dirname(__file__), FILENAME)
+
 _lock = threading.Lock()
 
 def load_config():
