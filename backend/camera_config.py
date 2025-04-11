@@ -2,13 +2,11 @@ import json
 import os
 import threading
 
-CONFIG_FILE = "camera_config.json"
+CONFIG_FILE = os.getenv("CAMERA_CONFIG_FILE", "camera_config.json")
 _lock = threading.Lock()
 
 def load_config():
     with _lock:
-        if not os.path.exists(CONFIG_FILE):
-            return {}
         with open(CONFIG_FILE, "r") as f:
             return json.load(f)
 
