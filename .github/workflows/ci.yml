@@ -9,12 +9,12 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      CI_CONFIG: backend/camera_config.test.json
+
     defaults:
       run:
         working-directory: backend
-
-    env:  # 👈 Add this section
-      CAMERA_CONFIG_FILE: backend/camera_config.test.json
 
     steps:
       - uses: actions/checkout@v3
@@ -29,14 +29,14 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r ../requirements.txt
 
-      - name: Create test camera config  # 👈 Add this so the test file exists
+      - name: Create test camera config
         run: |
           echo '{
             "cam1": {
               "rtsp_url": "rtsp://example.com/test",
               "device_id": "testcam01"
             }
-          }' > camera_config.test.json
+          }' > backend/camera_config.test.json
 
       - name: Run unit tests
         run: |
