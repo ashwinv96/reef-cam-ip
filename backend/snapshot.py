@@ -1,9 +1,10 @@
-from config import CAMERAS, S3_BUCKET, USER_ID
 import os
 import cv2
 from datetime import datetime
 from camera_rtsp import get_current_frame
-from s3_client import s3  # Import the shared S3 client
+from camera_config import get_device_id
+from config import S3_BUCKET, USER_ID
+from s3_client import s3  # Shared S3 client
 
 def take_snapshot(camera_id, upload_to_r2=True):
     frame = get_current_frame(camera_id)
@@ -11,7 +12,7 @@ def take_snapshot(camera_id, upload_to_r2=True):
         print(f"⚠️ No frame available from {camera_id}")
         return None
 
-    device_id = CAMERAS[camera_id]["device_id"]
+    device_id = get_device_id(camera_id)
     now = datetime.now()
     date_str = now.strftime("%Y-%m-%d")
     time_str = now.strftime("%H-%M-%S")

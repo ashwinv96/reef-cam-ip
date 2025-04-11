@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Manage Cameras</title>
+</head>
+<body>
+    <h1>Manage Cameras</h1>
+
+    <h2>Current Cameras</h2>
+    <ul>
+        {% for camera_id, config in cameras.items() %}
+            <li>
+                <strong>{{ camera_id }}</strong> (Device ID: {{ config.device_id }}) <br>
+                RTSP URL: {{ config.rtsp_url }}
+                <form action="/remove_camera/{{ camera_id }}" method="post" style="display:inline;">
+                    <button type="submit">Remove</button>
+                </form>
+            </li>
+        {% endfor %}
+    </ul>
+
+    <h2>Add New Camera</h2>
+    <form action="/manage_cameras" method="post">
+        <label for="camera_id">Camera ID:</label>
+        <input type="text" name="camera_id" required><br><br>
+
+        <label for="device_id">Device ID:</label>
+        <input type="text" name="device_id" required><br><br>
+
+        <label for="rtsp_url">RTSP URL:</label>
+        <input type="text" name="rtsp_url" required><br><br>
+
+        <button type="submit">Add Camera</button>
+    </form>
+
+    <br>
+    <a href="/">⬅ Back to Main Page</a>
+</body>
+</html>

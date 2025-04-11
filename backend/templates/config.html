@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Camera Config</title>
+</head>
+<body>
+    <h1>Camera Configuration</h1>
+    <form method="post" action="/update_config">
+        <table>
+            <tr><th>Camera ID</th><th>Device ID</th><th>RTSP URL</th></tr>
+            {% for camera_id, data in cameras.items() %}
+            <tr>
+                <td><input name="camera_id" value="{{ camera_id }}" readonly></td>
+                <td><input name="device_id" value="{{ data.device_id }}"></td>
+                <td><input name="rtsp_url" value="{{ data.rtsp_url }}"></td>
+            </tr>
+            {% endfor %}
+        </table>
+        <button type="submit">💾 Save</button>
+    </form>
+</body>
+</html>
