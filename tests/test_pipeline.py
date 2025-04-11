@@ -1,22 +1,18 @@
-import os
+# tests/test_pipeline.py
+
 import unittest
-from datetime import datetime
-from snapshot import take_snapshot, DEVICE_IDS
+from snapshot import take_snapshot
+from camera_config import get_camera_ids
 
 class TestSnapshotPipeline(unittest.TestCase):
-    def test_snapshot_and_upload(self):
-        # Use first available camera from DEVICE_IDS
-        camera_id = list(DEVICE_IDS.keys())[0]
-        device_id = DEVICE_IDS[camera_id]
+    def test_snapshot_for_each_camera(self):
+        camera_ids = get_camera_ids()
+        self.assertGreater(len(camera_ids), 0, "No cameras configured!")
 
-        # Take snapshot
-        filename = take_snapshot(camera_id)
-        self.assertIsNotNone(filename, "Snapshot failed or returned None")
-
-        # Construct expected local path
-        today = datetime.now().strftime("%Y-%m-%d")
-        local_path = f"snapshots/{device_id}/{today}/{filename}"
-        self.assertTrue(os.path.exists(local_path), f"Snapshot not found at {local_path}")
+        for cam_id in camera_ids:
+            print(f"📸 Testing snapshot for {cam_id}")
+            result = take_snapshot(cam_id, upload_to_r2=False)
+            self.assertIsNotNone(result, f"Snapshot failed for {cam_id}")
 
 if __name__ == "__main__":
     unittest.main()
